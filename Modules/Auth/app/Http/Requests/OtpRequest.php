@@ -13,7 +13,7 @@ class OtpRequest extends FormRequest
      */
     public function rules(): array
     {
-        return $this->routeIs('auth.verify-otp')
+        return $this->routeIs('api.auth.verify-otp')
         ? [
             'email' => 'required|email|exists:users,email',
             'otp'   => 'required|numeric',

@@ -3,25 +3,21 @@
 namespace Modules\Auth\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
-use Modules\Auth\Models\User;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Modules\Auth\Services\OtpService;
 use Modules\Core\Helpers\ApiResponse;
-use Modules\Core\Traits\HasMediaSync;
+use Modules\Auth\Services\UserService;
 use Modules\Auth\Http\Requests\UserRequest;
-use Modules\Auth\Repositories\UserRepository;
+use Illuminate\Validation\ValidationException;
 use Modules\Auth\Transformers\Api\UserResource;
 
 class UserController extends Controller
 {
-    use HasMediaSync;
+
 
     public function __construct(
-        protected UserRepository $userRepository,
-        protected OtpService $otpService
+        protected UserService $userService
     ) {}
 
     /**
@@ -37,34 +33,23 @@ class UserController extends Controller
     public function register(UserRequest $request)
     {
         try {
-            DB::beginTransaction();
-
+            // Validate incoming request data
             $validatedData = $request->validated();
 
-            // Create new user
-            $user = $this->userRepository->create($validatedData);
+            // Get user image if uploaded
+            $image = $request->hasFile('image') ? $request->file('image') : null;
 
-            // Upload profile image (if provided)
-            if ($request->hasFile('image')) {
-                $this->syncMedia(
-                    $user,
-                    $request->file('image'),
-                    'avatars', // media collection name
-                    false       // don't replace previous image
-                );
-            }
-            
-            // Generate and send OTP
-            $this->otpService->generateAndSend($user);
+            // Register user using the dedicated service layer
+            $user = $this->userService->registerUser($validatedData, $image);
 
-            DB::commit();
-
+            // Return success response with user email
             return ApiResponse::success($user->email);
         } catch (\Exception $e) {
-            DB::rollBack();
+            // Rollback and return error response
             return ApiResponse::error(419, $e->getMessage(), $e->getMessage());
         }
     }
+
 
     /**
      * Authenticate the user using email and password.
@@ -72,35 +57,19 @@ class UserController extends Controller
     public function login(Request $request)
     {
         try {
-            // Try to find the user by email
-            $user = $this->userRepository->findByEmail($request->email);
+            $data = $this->userService->loginUser($request->only('email', 'password'));
 
-            // If user not found, return a specific message
-            if (!$user) {
-                return ApiResponse::error(404, 'No account found with this email address.');
-            }
-
-            // If password is incorrect, return a different message
-            if (!Hash::check($request->password, $user->password)) {
-                return ApiResponse::error(401, 'Incorrect password. Please try again.');
-            }
-
-            // Prevent login if email not verified
-            if (! $user->hasVerifiedEmail()) {
-                return ApiResponse::error(403, 'Email not verified. Please verify your email first.');
-            }
-
-            // Generate access token
-            $token = $user->createToken('PassportToken')->accessToken;
-
-            $data = (new UserResource($user))->toArray(request());
-            $data['token'] = $token;
-
-            return ApiResponse::success($data);
+            return ApiResponse::success([
+                'user' => new UserResource($data['user']),
+                'token' => $data['token'],
+            ]);
+        } catch (ValidationException $e) {
+            return ApiResponse::error(422, $e->getMessage(), $e->errors());
         } catch (\Exception $e) {
-            return ApiResponse::error(500, $e->getMessage(), $e->getMessage());
+            return ApiResponse::error(500, $e->getMessage());
         }
     }
+
 
     /**
      * Update the authenticated user's profile information.
@@ -111,28 +80,23 @@ class UserController extends Controller
     public function updateProfile(UserRequest $request)
     {
         try {
-            DB::beginTransaction();
-
+            // Validate incoming request data
             $validatedData = $request->validated();
-            $user = $this->userRepository->update(Auth::user(), $validatedData);
 
-            // If a new profile image is uploaded, sync it
-            if ($request->hasFile('image')) {
-                $this->syncMedia(
-                    $user,
-                    $request->file('image'),
-                    'avatars', // media collection name
-                    true       // replace previous image
-                );
-            }
-            DB::commit();
+            // Get the uploaded image if provided
+            $image = $request->hasFile('image') ? $request->file('image') : null;
 
+            // Use the service to update user profile and sync image if available
+            $user = $this->userService->updateProfile(Auth::user(), $validatedData, $image);
+
+            // Return success response with updated user resource
             return ApiResponse::success(new UserResource($user));
         } catch (\Exception $e) {
-            DB::rollBack();
+            // Rollback and return error response in case of exception
             return ApiResponse::error(419, $e->getMessage(), $e->getMessage());
         }
     }
+
 
     /**
      * Log out the authenticated user by revoking the current access token.

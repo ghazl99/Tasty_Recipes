@@ -71,16 +71,6 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
             // If no media found, generate a default avatar image using ui-avatars.com
             : "https://ui-avatars.com/api/?name=" . urlencode($this->name) . "&background=0D8ABC&color=fff&size=256";
     }
-    
-    /**
-     * Mutator to automatically hash the password before saving.
-     *
-     * @param  string  $value  The raw password entered by the user.
-     * @return void
-     */
-    public function setPasswordAttribute($value)
-    {
-        // Hash the password using Laravel's Hash facade (uses bcrypt by default)
-        $this->attributes['password'] = Hash::make($value);
-    }
+
+
 }
