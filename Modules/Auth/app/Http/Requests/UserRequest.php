@@ -14,27 +14,29 @@ class UserRequest extends FormRequest
      */
     public function rules(): array
     {
-        return $this->routeIs('auth.register')
-            ? [
+
+
+        return $this->routeIs('api.auth.register')
+        ?  [
                 'name'      => 'required|string|max:255',
                 'email'     => 'required|string|email|max:255|unique:users',
                 'password'  => [
-                                    'required',
-                                    'string',
-                                    Password::min(8) // Minimum length of 8 characters
-                                        ->mixedCase() // Must include both uppercase and lowercase letters
-                                        ->letters()   // Must include at least one letter
-                                        ->numbers()   // Must include at least one number
-                                        ->symbols()   // Must include at least one symbol
-                                        ->uncompromised(), // Checks against known data breaches
-                                ],
+                    'required',
+                    'string',
+                    Password::min(8) // Minimum length of 8 characters
+                        ->mixedCase() // Must include both uppercase and lowercase letters
+                        ->letters()   // Must include at least one letter
+                        ->numbers()   // Must include at least one number
+                        ->symbols()   // Must include at least one symbol
+                        ->uncompromised(), // Checks against known data breaches
+                ],
                 'image'     => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             ]
-            : [
-                'name'      => 'sometimes|string|max:255',
-                'email'     => 'sometimes|email|unique:users,email,' . $this->user()->id,
-                'image'     => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-            ];
+        : [
+            'name'      => 'sometimes|string|max:255',
+            'email'     => 'sometimes|email|unique:users,email,' . $this->user()->id,
+            'image'     => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+        ];
     }
 
     /**

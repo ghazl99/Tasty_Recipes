@@ -10,6 +10,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\OneTimePasswords\Models\Concerns\HasOneTimePasswords;
+use Illuminate\Support\Facades\Hash;
 
 class User extends Authenticatable implements HasMedia, MustVerifyEmail
 {
@@ -58,6 +59,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
      *
      * @return string
      */
+
     public function getProfilePhotoUrlAttribute()
     {
         // Attempt to retrieve the first media item from the 'avatars' collection
@@ -68,5 +70,17 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
             ? url('storage/' . $media->id . '/' . $media->file_name)
             // If no media found, generate a default avatar image using ui-avatars.com
             : "https://ui-avatars.com/api/?name=" . urlencode($this->name) . "&background=0D8ABC&color=fff&size=256";
+    }
+    
+    /**
+     * Mutator to automatically hash the password before saving.
+     *
+     * @param  string  $value  The raw password entered by the user.
+     * @return void
+     */
+    public function setPasswordAttribute($value)
+    {
+        // Hash the password using Laravel's Hash facade (uses bcrypt by default)
+        $this->attributes['password'] = Hash::make($value);
     }
 }

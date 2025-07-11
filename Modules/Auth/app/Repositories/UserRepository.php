@@ -17,7 +17,7 @@ class UserRepository
         return User::create([
             'name'     => $data['name'],
             'email'    => $data['email'],
-            'password' => bcrypt($data['password']), // Hash the password
+            'password' => $data['password'], // Hash the password
         ]);
     }
 

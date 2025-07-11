@@ -53,12 +53,7 @@ class UserController extends Controller
                     false       // don't replace previous image
                 );
             }
-            $this->syncMedia(
-                $user,
-                $request->file('image'),
-                'avatars',
-                false
-            );
+            
 
             // Generate and send OTP
             $this->otpService->generateAndSend($user);
