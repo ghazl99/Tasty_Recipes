@@ -4,7 +4,7 @@ namespace Modules\Auth\Repositories;
 
 use Modules\Auth\Models\User;
 
-class UserRepository
+class UserRepository implements UserRepositoryInterface
 {
     /**
      * Create a new user with hashed password.

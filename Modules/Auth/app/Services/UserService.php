@@ -5,9 +5,9 @@ namespace Modules\Auth\Services;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Modules\Auth\Services\OtpService;
-use Modules\Auth\Repositories\UserRepository;
-use Illuminate\Validation\ValidationException;
 use Modules\Core\Traits\HasMediaSync;
+use Illuminate\Validation\ValidationException;
+use Modules\Auth\Repositories\UserRepositoryInterface;
 
 class UserService
 {
@@ -15,7 +15,7 @@ class UserService
     protected $userRepository;
     protected $otpService;
 
-    public function __construct(UserRepository $userRepository, OtpService $otpService)
+    public function __construct(UserRepositoryInterface  $userRepository, OtpService $otpService)
     {
         $this->userRepository = $userRepository;
         $this->otpService = $otpService;
