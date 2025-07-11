@@ -54,7 +54,6 @@ class UserController extends Controller
                 );
             }
             
-
             // Generate and send OTP
             $this->otpService->generateAndSend($user);
 
