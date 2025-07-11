@@ -11,10 +11,10 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\OneTimePasswords\Models\Concerns\HasOneTimePasswords;
 
-class User extends Authenticatable implements HasMedia ,MustVerifyEmail
+class User extends Authenticatable implements HasMedia, MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasApiTokens, InteractsWithMedia ,HasOneTimePasswords;
+    use HasFactory, Notifiable, HasApiTokens, InteractsWithMedia, HasOneTimePasswords;
 
     /**
      * The attributes that are mass assignable.
@@ -39,14 +39,6 @@ class User extends Authenticatable implements HasMedia ,MustVerifyEmail
     protected $appends = [
         'profile_photo_url',
     ];
-    public function getProfilePhotoUrlAttribute()
-    {
-        $media = $this->getFirstMedia('avatars');
-
-        return $media
-            ? url('storage/' . $media->id . '/' . $media->file_name)
-            : "https://ui-avatars.com/api/?name=" . urlencode($this->name) . "&background=0D8ABC&color=fff&size=256";
-    }
 
     /**
      * Get the attributes that should be cast.
@@ -59,5 +51,22 @@ class User extends Authenticatable implements HasMedia ,MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Accessor to get the URL of the user's profile photo.
+     *
+     * @return string
+     */
+    public function getProfilePhotoUrlAttribute()
+    {
+        // Attempt to retrieve the first media item from the 'avatars' collection
+        $media = $this->getFirstMedia('avatars');
+
+        // If media exists, return the storage URL to the file
+        return $media
+            ? url('storage/' . $media->id . '/' . $media->file_name)
+            // If no media found, generate a default avatar image using ui-avatars.com
+            : "https://ui-avatars.com/api/?name=" . urlencode($this->name) . "&background=0D8ABC&color=fff&size=256";
     }
 }
